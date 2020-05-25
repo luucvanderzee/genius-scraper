@@ -1,0 +1,11 @@
+node_modules
+
+cache/*
+!cache/index.js
+
+output/*
+!output/artists-cleaned.txt
+!output/artists-wiki.txt
+!output/songURLs.csv
+
+.env
