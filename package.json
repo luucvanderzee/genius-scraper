@@ -10,7 +10,7 @@
     "songurls:clear": "rm -rf ./cache/songURLs && node -r esm getSongURLs.js",
     "songsraw": "node -r esm getSongsRaw.js",
     "songsraw:clear": "rm -rf ./cache/songsRaw && node -r esm getSongsRaw.js",
-    "cleansongs": "node -r esm cleanRawSongs.js"
+    "cleansongs": "node --max-old-space-size=4096 -r esm cleanRawSongs.js"
   },
   "dependencies": {
     "axios": "^0.19.2",

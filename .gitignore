@@ -9,3 +9,5 @@ output/*
 !output/songURLs.csv
 
 .env
+
+db/data.db
