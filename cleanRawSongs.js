@@ -25,11 +25,11 @@ function log (array) {
 function cleanPage (htmlStr) {
   console.log(htmlStr)
   const rawLines = getRawLines(htmlStr)
-  log(rawLines)
+  // log(rawLines)
 
   const processedLines = processRawLines(rawLines)
 
-  return processedLines.join('\n')
+  // return processedLines.join('\n')
 }
 
 function cleanLocationDate (locationDateStr) {
@@ -41,11 +41,17 @@ async function main () {
   const songsRaw = readCSV('./output/songsRaw.csv')
   let currentPercentage = '0%'
 
-  for (let i = 1500; i < 1501; i++) {
-  // for (let i = 0; i < songsRaw.length; i++) {
+  // for (let i = 608; i < 609; i++) {
+  for (let i = 0; i < songsRaw.length; i++) {
     const [artist, url, rawText, rawLocationDate] = songsRaw[i]
-    console.log(url)
-    const lyrics = cleanPage(rawText)
+
+    if (url !== 'https://genius.com/Public-enemy-she-watch-channel-zero-lyrics') {
+      continue
+    }
+
+    // const lyrics = cleanPage(rawText)
+    console.log(i)
+    throw new Error('CHEEKY BREEKY')
     // const [location, date] = cleanLocationDate(rawLocationDate)
 
     // await db.insert({

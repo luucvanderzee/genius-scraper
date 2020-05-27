@@ -1,4 +1,9 @@
-import { processRawLines } from '../utils/cleaning.js'
+import { processRawLines, getRawLines } from '../utils/cleaning.js'
+import missyElliotSnippet from './__data__/608-missy-elliot.js'
+import publicEnemySnippet from './__data__/239-public-enemy.js'
+
+const missyElliotRawLines = getRawLines(missyElliotSnippet)
+const publicEnemyRawLines = getRawLines(publicEnemySnippet)
 
 describe('processRawLines', () => {
   test('Rap god first ten lines', () => {
@@ -85,5 +90,51 @@ describe('processRawLines', () => {
     ]
 
     expect(processRawLines(rawLines)).toEqual(expectedResult)
+  })
+
+  test('Missy Elliot lines 65-75 ([Break] does not count as song part)', () => {
+    const result = processRawLines(missyElliotRawLines).slice(65, 75)
+
+    const expectedResult = [
+      'When I do my thang',
+      "Got the place on fire, burnin' down to flames",
+      "She's a bitch",
+      'When you say my name',
+      "Talk mo' junk but won't look my way",
+      "She's a bitch",
+      'See I got more cheese',
+      'So back on up while I roll up my sleeves',
+      "She's a bitch",
+      "You can't see me, Joe"
+    ]
+
+    expect(result).toEqual(expectedResult)
+  })
+
+  test('Public enemy lines xx-xx ([Refrain] and [Chorus] tags)', () => {
+    const result = processRawLines(publicEnemyRawLines).slice(32, 50)
+
+    const expectedResult = [
+      '2, 7, 5, 4, 8 she watched she said',
+      'All added up to zero, and nothing in her head',
+      'She turns and turns',
+      'and she hopes the soaps',
+      "Are for real, she learns that it ain't true, nope",
+      "But she won't survive and rather die in a lie",
+      'Fall a fool for some dude on a tube',
+      "I don't think I can handle she goes channel to channel",
+      'Cold looking for that hero',
+      ',',
+      'she watch channel zero',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch',
+      'She watch, she watch, she watch, she watch'
+    ]
+
+    expect(result).toEqual(expectedResult)
   })
 })

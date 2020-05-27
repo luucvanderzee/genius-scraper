@@ -75,7 +75,7 @@ export function processRawLines (rawLines) {
     const currentLineIsSongSectionIndicator = isSongSectionIndicator(line)
 
     if (lastLineWasSongSectionIndicator && currentLineIsSongSectionIndicator) {
-      if (songSections[lastLine]) {
+      if (songSections[lastLine] && isChorusOrHook(lastLine)) {
         processedLines.push(...songSections[lastLine])
       }
 
@@ -90,7 +90,10 @@ export function processRawLines (rawLines) {
     }
 
     if (!currentLineIsSongSectionIndicator) {
-      recordedLines.push(line)
+      if (isChorusOrHook(currentSongSection)) {
+        recordedLines.push(line)
+      }
+
       processedLines.push(line)
     }
 
@@ -102,4 +105,13 @@ export function processRawLines (rawLines) {
 
 function isSongSectionIndicator (line) {
   return line.startsWith('[') && line.endsWith(']')
+}
+
+function isChorusOrHook (songSection) {
+  const lower = songSection.toLowerCase()
+  return (
+    lower.startsWith('[chorus') ||
+    lower.startsWith('[hook') ||
+    lower.startsWith('[refrain')
+  )
 }
