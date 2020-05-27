@@ -11,35 +11,49 @@ function readCSV (path) {
     .map(strRow => strRow.split(COLUMN_JOIN_STRING))
 }
 
+function log (array) {
+  const len = array.length
+  const numberOfCycles = ((len - (len % 100)) / 100) + 1
+
+  for (let i = 0; i < numberOfCycles; i++) {
+    console.log(array.slice((i * 100), (i + 1) * 100))
+  }
+
+  console.log('-----------')
+}
+
+function cleanPage (htmlStr) {
+  console.log(htmlStr)
+  const rawLines = getRawLines(htmlStr)
+  log(rawLines)
+
+  const processedLines = processRawLines(rawLines)
+
+  return processedLines.join('\n')
+}
+
 const isTextNode = node => node.nodeType === 3
 const isAnchorNode = node => node.nodeType === 1 && node.tagName.toLowerCase() === 'a'
 
-function cleanPage (htmlStr) {
+export function getRawLines (htmlStr) {
   const dom = new JSDOM(`<!DOCTYPE html>${htmlStr}`).window.document
   const rootNodes = dom.querySelector('body').childNodes
 
-  const lines = []
+  const rawLines = []
 
   rootNodes.forEach(node => {
     if (isTextNode(node) || isAnchorNode(node)) {
       const linesInNode = cleanNode(node)
-
-      if (linesInNode) {
-        lines.push(...linesInNode)
-      }
+      rawLines.push(...linesInNode)
     }
   })
 
-  return lines.join('\n')
+  return rawLines
 }
 
 function cleanNode (node) {
   const trimmed = node.textContent.trim().split('"').join('')
-  if (trimmed.length === 0) return null
-
-  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-    return null
-  }
+  if (trimmed.length === 0) return []
 
   if (textContainsMultipleLines(trimmed)) {
     return extractLines(trimmed)
@@ -48,8 +62,10 @@ function cleanNode (node) {
   }
 }
 
+const matchRegex = /[a-z|\d|\].!?'][A-Z][a-zA-Z\s]/
+
 function textContainsMultipleLines (text) {
-  return text.match(/[a-z|\d|[.!?'][A-Z][a-zA-Z\s]/)
+  return text.match(matchRegex)
 }
 
 function extractLines (text) {
@@ -65,10 +81,10 @@ function extractLines (text) {
   return lines
 }
 
-const regex = /[a-z|\d|[.!?'][A-Z][a-zA-Z\s]/g
+const matchAllRegex = /[a-z|\d|\].!?'][A-Z][a-zA-Z\s]/g
 
 function getIndices (text) {
-  const matches = text.matchAll(regex)
+  const matches = text.matchAll(matchAllRegex)
   const indices = []
 
   for (const match of matches) {
@@ -78,34 +94,77 @@ function getIndices (text) {
   return indices
 }
 
+function processRawLines (rawLines) {
+  const processedLines = []
+
+  const songSections = {}
+  let lastLine = ''
+  let currentSongSection = ''
+  let recordedLines = []
+
+  rawLines.forEach(line => {
+    const lastLineWasSongSectionIndicator = isSongSectionIndicator(lastLine)
+    const currentLineIsSongSectionIndicator = isSongSectionIndicator(line)
+
+    if (lastLineWasSongSectionIndicator && currentLineIsSongSectionIndicator) {
+      if (songSections[lastLine]) {
+        processedLines.push(...songSections[lastLine])
+      }
+
+      recordedLines = []
+      currentSongSection = line
+    }
+
+    if (!lastLineWasSongSectionIndicator && currentLineIsSongSectionIndicator) {
+      songSections[currentSongSection] = recordedLines
+      recordedLines = []
+      currentSongSection = line
+    }
+
+    if (!currentLineIsSongSectionIndicator) {
+      recordedLines.push(line)
+      processedLines.push(line)
+    }
+
+    lastLine = line
+  })
+
+  return processedLines
+}
+
+function isSongSectionIndicator (line) {
+  return line.startsWith('[') && line.endsWith(']')
+}
+
 function cleanLocationDate (locationDateStr) {
   return locationDateStr.split('---')
 }
 
 async function main () {
-  const db = await createTable('songs', ['artist', 'url', 'lyrics', 'location', 'date'])
+  // const db = await createTable('songs', ['artist', 'url', 'lyrics', 'location', 'date'])
   const songsRaw = readCSV('./output/songsRaw.csv')
   let currentPercentage = '0%'
 
-  for (let i = 0; i < songsRaw.length; i++) {
+  for (let i = 0; i < 1; i++) {
+  // for (let i = 0; i < songsRaw.length; i++) {
     const [artist, url, rawText, rawLocationDate] = songsRaw[i]
     const lyrics = cleanPage(rawText)
-    const [location, date] = cleanLocationDate(rawLocationDate)
+    // const [location, date] = cleanLocationDate(rawLocationDate)
 
-    await db.insert({
-      artist,
-      url,
-      lyrics,
-      location,
-      date
-    })
+    // await db.insert({
+    //   artist,
+    //   url,
+    //   lyrics,
+    //   location,
+    //   date
+    // })
 
-    const percentage = `${Math.round(((i + 1) / (songsRaw.length + 1)) * 100)}%`
+    // const percentage = `${Math.round(((i + 1) / (songsRaw.length + 1)) * 100)}%`
 
-    if (currentPercentage !== percentage) {
-      currentPercentage = percentage
-      console.log(currentPercentage)
-    }
+    // if (currentPercentage !== percentage) {
+    //   currentPercentage = percentage
+    //   console.log(currentPercentage)
+    // }
   }
 }
 
