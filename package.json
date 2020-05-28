@@ -10,7 +10,8 @@
     "songurls:clear": "rm -rf ./cache/songURLs && node -r esm getSongURLs.js",
     "songsraw": "node -r esm getSongsRaw.js",
     "songsraw:clear": "rm -rf ./cache/songsRaw && node -r esm getSongsRaw.js",
-    "cleansongs": "node --max-old-space-size=4096 -r esm cleanRawSongs.js"
+    "cleansongs": "node --max-old-space-size=4096 -r esm cleanRawSongs.js",
+    "test": "jest"
   },
   "dependencies": {
     "axios": "^0.19.2",
@@ -23,12 +24,21 @@
     "sqlite3": "^4.1.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.10.0",
+    "@babel/preset-env": "^7.10.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
-    "esm": "^3.2.25"
+    "esm": "^3.2.25",
+    "jest": "^26.0.1"
+  },
+  "jest": {
+    "verbose": true,
+    "testPathIgnorePatterns": [
+      "/__data__/"
+    ]
   }
 }

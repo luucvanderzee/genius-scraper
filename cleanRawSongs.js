@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { COLUMN_JOIN_STRING, ROW_JOIN_STRING } from './joinStrings.js'
-import { JSDOM } from 'jsdom'
+import { getRawLines, processRawLines } from './utils/cleaning.js'
 import { createTable } from './db'
 
 function readCSV (path) {
@@ -11,94 +11,44 @@ function readCSV (path) {
     .map(strRow => strRow.split(COLUMN_JOIN_STRING))
 }
 
-const isTextNode = node => node.nodeType === 3
-const isAnchorNode = node => node.nodeType === 1 && node.tagName.toLowerCase() === 'a'
-
 function cleanPage (htmlStr) {
-  const dom = new JSDOM(`<!DOCTYPE html>${htmlStr}`).window.document
-  const rootNodes = dom.querySelector('body').childNodes
+  const rawLines = getRawLines(htmlStr)
+  const processedLines = processRawLines(rawLines)
 
-  const lines = []
-
-  rootNodes.forEach(node => {
-    if (isTextNode(node) || isAnchorNode(node)) {
-      const linesInNode = cleanNode(node)
-
-      if (linesInNode) {
-        lines.push(...linesInNode)
-      }
-    }
-  })
-
-  return lines.join('\n')
+  return processedLines.join('\n')
 }
 
-function cleanNode (node) {
-  const trimmed = node.textContent.trim().split('"').join('')
-  if (trimmed.length === 0) return null
+const yearRegex = /\d{4}$/
 
-  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-    return null
-  }
+function cleanDate (locationDateStr) {
+  const split = locationDateStr.split('---')
 
-  if (textContainsMultipleLines(trimmed)) {
-    return extractLines(trimmed)
-  } else {
-    return [trimmed]
-  }
-}
+  const split0Match = split[0].match(yearRegex)
+  if (split0Match) return split0Match[0]
 
-function textContainsMultipleLines (text) {
-  return text.match(/[a-z|\d|[.!?'][A-Z][a-zA-Z\s]/)
-}
-
-function extractLines (text) {
-  const newLineIndices = getIndices(text)
-  const lines = [text.slice(0, newLineIndices[0])]
-
-  for (let i = 1; i < newLineIndices.length; i++) {
-    lines.push(text.slice(newLineIndices[i - 1], newLineIndices[i]))
-  }
-
-  lines.push(text.slice(newLineIndices[newLineIndices.length - 1], text.length))
-
-  return lines
-}
-
-const regex = /[a-z|\d|[.!?'][A-Z][a-zA-Z\s]/g
-
-function getIndices (text) {
-  const matches = text.matchAll(regex)
-  const indices = []
-
-  for (const match of matches) {
-    indices.push(match.index + 1)
-  }
-
-  return indices
-}
-
-function cleanLocationDate (locationDateStr) {
-  return locationDateStr.split('---')
+  const split1Match = split[1] ? split[1].match(yearRegex) : undefined
+  if (split1Match !== undefined) return split1Match[0]
 }
 
 async function main () {
-  const db = await createTable('songs', ['artist', 'url', 'lyrics', 'location', 'date'])
+  const db = await createTable('songs', ['artist', 'url', 'lyrics', 'date'])
   const songsRaw = readCSV('./output/songsRaw.csv')
   let currentPercentage = '0%'
 
   for (let i = 0; i < songsRaw.length; i++) {
     const [artist, url, rawText, rawLocationDate] = songsRaw[i]
-    const lyrics = cleanPage(rawText)
-    const [location, date] = cleanLocationDate(rawLocationDate)
 
-    await db.insert({
-      artist,
-      url,
-      lyrics,
-      location,
-      date
-    })
+    const lyrics = cleanPage(rawText)
+    const date = cleanDate(rawLocationDate)
+
+    if (date) {
+      await db.insert({
+        artist,
+        url,
+        lyrics,
+        date
+      })
+    }
 
     const percentage = `${Math.round(((i + 1) / (songsRaw.length + 1)) * 100)}%`
 
